@@ -1,25 +1,21 @@
-typedef int LONG;
-typedef unsigned short WORD;
-typedef unsigned int DWORD;
+struct BMP_file_header {
+  unsigned short  bfType{0};
+  unsigned int bfSize{0};
+  unsigned short  bfReserved1{0};
+  unsigned short  bfReserved2{0};
+  unsigned int bfOffBits{0};
+};
 
-typedef struct tagBITMAPFILEHEADER {
-  WORD  bfType;
-  DWORD bfSize;
-  WORD  bfReserved1;
-  WORD  bfReserved2;
-  DWORD bfOffBits;
-} BITMAPFILEHEADER, *PBITMAPFILEHEADER;
-
-typedef struct tagBITMAPINFOHEADER {
-  DWORD biSize;
-  LONG  biWidth;
-  LONG  biHeight;
-  WORD  biPlanes;
-  WORD  biBitCount;
-  DWORD biCompression;
-  DWORD biSizeImage;
-  LONG  biXPelsPerMeter;
-  LONG  biYPelsPerMeter;
-  DWORD biClrUsed;
-  DWORD biClrImportant;
-} BITMAPINFOHEADER, *PBITMAPINFOHEADER;
+struct BMP_info_header {
+  unsigned int biSize{0};
+  int  biWidth{0};
+  int  biHeight{0};
+  unsigned short  biPlanes{0};
+  unsigned short  biBitCount{0};
+  unsigned int biCompression{0};
+  unsigned int biSizeImage{0};
+  int  biXPelsPerMeter{0};
+  int  biYPelsPerMeter{0};
+  unsigned int biClrUsed{0};
+  unsigned int biClrImportant{0};
+};

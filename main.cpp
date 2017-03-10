@@ -5,19 +5,18 @@
 
 void print_vector(std::vector<IPixel*> v) {
   for (IPixel* p : v) {
-    std::cout << *p << std::endl;
+    std::cout << *p;
   }
 }
 
 int main() {
   IParser parser{};
-  std::cout << "1x1:" << std::endl;
   std::vector<IPixel*> vr = parser.parse("test_black_1x1.bmp", IParser::BMP);
   print_vector(vr);
   
-  std::cout << "\n10x10:" << std::endl;
   print_vector(parser.parse("test_black_10x10.bmp", IParser::BMP));
   
+  print_vector(parser.parse("test_red_green_5x10.bmp", IParser::BMP));  
   
   return 0;
 }
