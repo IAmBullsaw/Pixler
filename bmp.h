@@ -26,7 +26,7 @@ struct BMP_info_header_V4 {
   int bV4Height;
   unsigned short bV4Planes;
   unsigned short bV4BitCount;
-  unsigned int bV4V4Compression;
+  unsigned int bV4Compression;
   unsigned int bV4SizeImage;
   int bV4XPelsPerMeter;
   int bV4YPelsPerMeter;
@@ -37,8 +37,20 @@ struct BMP_info_header_V4 {
   unsigned int bV4BlueMask;
   unsigned int bV4AlphaMask;
   unsigned int bV4CSType;
-  CIEXYZTRIPLE bV4Endpoints; // Oh lord what is this coordinate triplet?
+  //CIEXYZTRIPLE bV4Endpoints; // Oh lord what is this coordinate triplet?
   unsigned int bV4GammaRed;
   unsigned int bV4GammaGreen;
   unsigned int bV4GammaBlue;
+};
+
+enum Compression {
+   BI_RGB = 0x0000,
+   BI_RLE8 = 0x0001,
+   BI_RLE4 = 0x0002,
+   BI_BITFIELDS = 0x0003,
+   BI_JPEG = 0x0004,
+   BI_PNG = 0x0005,
+   BI_CMYK = 0x000B,
+   BI_CMYKRLE8 = 0x000C,
+   BI_CMYKRLE4 = 0x000D
 };
