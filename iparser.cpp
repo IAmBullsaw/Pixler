@@ -6,6 +6,8 @@
 #include "ipixel.h"
 #include "bmp.h"
 
+#include <bitset>
+
 IParser::IParser(){
 }
 
@@ -77,6 +79,8 @@ void read_bytes_ushort(unsigned short* value,std::vector<char>::iterator & it,st
   *value = static_cast<unsigned short>(byte);
   std::advance(it,1);
 }
+
+
 
 void read_2_bytes_ushort(unsigned short* value,std::vector<char>::iterator & it,std::vector<char>::iterator end) {
   *value = 0;
@@ -158,10 +162,36 @@ std::vector<IPixel*> IParser::parse_bmp(std::string image) {
 
     // Why is size so terribly horrbily wrong?
     read_bytes_uint(&info_header.bV4Compression, 4, iit, buffer.end());
-    read_bytes_uint(&info_header.bV4SizeImage, 4, iit, buffer.end());
+    read_bytes_uint(&info_header.bV4SizeImage, 6, iit, buffer.end());
 
     print_bmp_file_header(file_header);
     print_bmp_info_header_V4(info_header);
+
+    iit = buffer.begin() + file_header.bfOffBits;
+    while (iit != buffer.end()) {
+
+      unsigned short r{0};
+      unsigned short g{0};
+      unsigned short b{0};      
+
+      read_bytes_ushort(&b,iit,buffer.end());
+      read_bytes_ushort(&g,iit,buffer.end());
+      read_bytes_ushort(&r,iit,buffer.end());
+      
+      vector.push_back(new IPixel(r,g,b));
+
+      std::bitset<16> test_r{r};
+      std::bitset<16> test_g{g};
+      std::bitset<16> test_b{b};
+
+      std::cout << test_r << std::endl;
+      std::cout << test_g << std::endl;
+      std::cout << test_b << std::endl << std::endl;
+
+      
+      read_bytes_ushort(&r,iit,buffer.end()); // and the fourth...
+    }
+
     
   } else if (header_size == 876) { // this is the wrong number
     /*
@@ -187,7 +217,7 @@ std::vector<IPixel*> IParser::parse_bmp(std::string image) {
   //   vector.push_back( new IPixel(*(it+2),*(it+1),*it) );
   //   it += 4;
   // }
-  
+  std::cout << buffer.size() << std::endl;
   return vector;
 }
 
@@ -196,6 +226,8 @@ std::vector<IPixel*> IParser::parse( std::string image, IParser::IMG img_type) {
   if (img_type == IParser::BMP) {
     vector = parse_bmp(image);
   }
+
+  std::cout << vector.size() << std::endl;
   
   return vector;
 }
