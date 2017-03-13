@@ -1,17 +1,21 @@
 CC = g++ 
 CFLAGS = -std=c++11 -Wextra -Wall -Werror
-NAME = Pixler
+MAIN = Pixler
 IMGTYPES = bmp.h
+RM = rm -v
+SOURCES = iparser.cpp ipixel.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
 
-make: iparser pixel
-	$(CC) $(CFLAGS) -o $(NAME) main.cpp *.o $(IMGTYPES)
-iparser: 
-	$(CC) $(CFLAGS) -c iparser.cpp iparser.h
-pixel:
-	$(CC) $(CFLAGS) -c ipixel.cpp ipixel.h
-run: make
-	./$(NAME)
-rerun: clean make run
-
+all: $(MAIN)
+	@echo Made all:  ./$(MAIN) to run
+$(MAIN): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $(MAIN) main.cpp $(OBJECTS) $(IMGTYPES)
+# Converting .cpp into .o, GNU magic.
+.cpp.o:
+	$(CC) $(CFLAGS) -c $<  -o $@
+run: all
+	@echo Running...
+	./$(MAIN)
 clean:
-	rm $(NAME) *.o
+	@echo Cleaning...
+	$(RM) $(NAME) *.o
