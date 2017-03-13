@@ -28,6 +28,6 @@ int IPixel::get_blue() {
 }
 
 std::ostream& operator<<(std::ostream& os, const IPixel& p) {
-  os << "<rgb " << p.r << p.g << p.b << ">" << std::endl;
+  os << "<rgb " << p.r << ", " << p.g << ", " << p.b << ">";
   return os;
 } 
