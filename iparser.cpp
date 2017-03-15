@@ -8,10 +8,11 @@
 
 #include <bitset>
 
-IParser::IParser(){
-}
+typedef unsigned short word;
+typedef unsigned int dword;
 
 
+IParser::IParser() {}
 
 void print_bmp_file_header(BMP_file_header file_header) {
   std::cout << "file_header:\n"
@@ -35,7 +36,6 @@ void print_bmp_info_header(BMP_info_header info_header) {
 	    << "ClrUsed " << info_header.biClrUsed << "\n"
 	    << "ClrImportant " << info_header.biClrImportant << std::endl << std::endl;
 }
-
 void print_bmp_info_header_V4(BMP_info_header_V4 h) {
   std::cout << "info_header:\n"
 	    << "Size " << h.bV4Size << "\n"
@@ -71,17 +71,60 @@ void print_bmp_info_header_V4(BMP_info_header_V4 h) {
 	    << "GammaGreen " << h.bV4GammaGreen << "\n"
 	    << "GammaBlue " << h.bV4GammaBlue << std::endl;
 }
+bool is_valid_bmp(std::vector<char>::iterator & it) {
+  char b{*it};
+  std::advance(it,1);
+  char m{*it};
+  std::advance(it,1);
+  return (b == 'b' && m == 'm');
+}
 
-void read_bytes_ushort(unsigned short* value,std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+bool read_word(word & w, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+  // Char is 1 byte, 8 bits.
+  // Word is 2 bytes, ergo we need to shift 8 bits.
+  
+  int shift{0};
+  w = 0;
+  bool success{true};
+  for (int i{0}; i < 2; i++) {
+    if (it == end) {
+      success = false;
+      break;
+    }
+    w += static_cast<word>(*it << shift);
+    shift += 8;
+    std::advance(it,1);
+  }
+  return success;
+}
+bool read_dword(dword & dw, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+  int shift{0};
+  dw = 0;
+  bool success{true};
+  for (int i{0}; i < 4; i++) {
+    if (it == end) {
+      success = false;
+      break;
+    }
+    dw += static_cast<dword>(*it << shift);
+    shift += 8;
+    std::advance(it,1);
+  }
+  return success;
+}
+/*
+IPixel read_pixel(std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+  ; // TODO
+}
+ */
+
+void read_bytes_ushort(unsigned short* value, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
   if (it == end)
     return;
   int byte = *it;
   *value = static_cast<unsigned short>(byte);
   std::advance(it,1);
 }
-
-
-
 void read_2_bytes_ushort(unsigned short* value,std::vector<char>::iterator & it,std::vector<char>::iterator end) {
   *value = 0;
   unsigned short vessel{0};
@@ -90,7 +133,6 @@ void read_2_bytes_ushort(unsigned short* value,std::vector<char>::iterator & it,
   read_bytes_ushort(&vessel,it,end);
   *value += vessel;
 }
-
 void read_bytes_uint(unsigned int* value, int n_bytes, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
   // make sure vessels are empty before reading
   *value = 0;
@@ -107,47 +149,52 @@ void read_bytes_uint(unsigned int* value, int n_bytes, std::vector<char>::iterat
       std::cout << "End of file!" << std::endl;
       return;
     }
-	*value += static_cast<unsigned int>(byte << shift);
-      shift += 8;
-      std::advance(it,1);
+    *value += static_cast<unsigned int>(byte << shift);
+    shift += 8;
+    std::advance(it,1);
   }
 }
+void read_bytes_int(int* value, int n_bytes, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
   
-  void read_bytes_int(int* value, int n_bytes, std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+  union sign_converter {
+    unsigned int _uint;
+    int _int;
+  } converter;
+  
+  read_bytes_uint(&converter._uint, n_bytes, it, end);
+  *value = converter._int;
+  
+}
 
-    union sign_converter {
-      unsigned int _uint;
-      int _int;
-    } converter;
+void parse_bmp_header(BMP_file_header & header,std::vector<char>::iterator & it,std::vector<char>::iterator end) {
+  // 14 bit header
+  header.bfType[0] = *it;
+  std::advance(it,1);
+  header.bfType[1] = *it;
+  read_dword(header.bfSize,it,end);
+  read_word(header.bfReserved1,it,end);
+  read_word(header.bfReserved2,it,end);
+  read_dword(header.bfOffBits,it,end);
 
-    read_bytes_uint(&converter._uint, n_bytes, it, end);
-    *value = converter._int;
-    
-  }
-std::vector<IPixel*> IParser::parse_bmp(std::string image) {
+  std::cout << std::bitset<32>(138) << std::endl;
+  std::cout << std::bitset<32>(header.bfSize) << std::endl;
+  
+}
+
+std::vector<IPixel*> IParser::parse_bmp(std::string image) {  
   std::vector<IPixel*> vector{};
-  
-  BMP_file_header file_header;
-
   std::ifstream input(image, std::ios::binary);
-  
   std::vector<char> buffer((std::istreambuf_iterator<char>(input)), 
 			   (std::istreambuf_iterator<char>())
 			   );
   input.close();
   // Building data
-  auto iit = buffer.begin();
+  auto iit = buffer.begin();       
+  BMP_file_header file_header;
+  parse_bmp_header(file_header, iit, buffer.end());
+
+  print_bmp_file_header(file_header);
   
-  // header is 14 bytes
-  read_bytes_ushort(&file_header.bfType[0], iit, buffer.end()); // 1 byte
-  read_bytes_ushort(&file_header.bfType[1], iit, buffer.end()); // 1 byte
-  read_bytes_uint(&file_header.bfSize, 4, iit, buffer.end()); // 4 bytes
-
-  read_2_bytes_ushort(&file_header.bfReserved1, iit, buffer.end()); // 1 byte
-  read_2_bytes_ushort(&file_header.bfReserved2, iit, buffer.end()); // 1 byte
-  read_bytes_uint(&file_header.bfOffBits, 4, iit, buffer.end()); // 4 bytes
-  // total bytes read: 14
-
   unsigned int header_size{0};
   read_bytes_uint(&header_size, 4, iit, buffer.end()); // 4 bytes
 
@@ -188,26 +235,23 @@ std::vector<IPixel*> IParser::parse_bmp(std::string image) {
       std::cout << test_g << std::endl;
       std::cout << test_b << std::endl << std::endl;
 
-      
       read_bytes_ushort(&r,iit,buffer.end()); // and the fourth...
     }
-
-    
   } else if (header_size == 876) { // this is the wrong number
     /*
-    info_header.biSize = buffer[17] + buffer[16] + buffer[15] + buffer[14]; // 15-18
-    info_header.biWidth = buffer[21] + buffer[20] + buffer[19] + buffer[18]; // 19-22
-    info_header.biHeight = buffer[25] + buffer[24] + buffer[23] + buffer[22]; // 23-26
-    info_header.biPlanes = buffer[27] + buffer[26]; // 27,28
-    info_header.biBitCount = buffer[29] + buffer[28]; // 29,30
-    info_header.biCompression = buffer[33] + buffer[32] + buffer[31] + buffer[30]; // 31-34
-    info_header.biSizeImage = buffer[37] + buffer[36] + buffer[35] + buffer[34]; // 35-38
-    info_header.biXPelsPerMeter = buffer[41] + buffer[40] + buffer[39] + buffer[38]; // 39-42
-    info_header.biYPelsPerMeter = buffer[45] + buffer[44] + buffer[43] + buffer[42]; // 43-46
-    info_header.biClrUsed = buffer[49] + buffer[48] + buffer[47] + buffer[46]; // 47-50
-    info_header.biClrImportant = buffer[53] + buffer[52] + buffer[51] + buffer[50]; // 51-54 
+      info_header.biSize = buffer[17] + buffer[16] + buffer[15] + buffer[14]; // 15-18
+      info_header.biWidth = buffer[21] + buffer[20] + buffer[19] + buffer[18]; // 19-22
+      info_header.biHeight = buffer[25] + buffer[24] + buffer[23] + buffer[22]; // 23-26
+      info_header.biPlanes = buffer[27] + buffer[26]; // 27,28
+      info_header.biBitCount = buffer[29] + buffer[28]; // 29,30
+      info_header.biCompression = buffer[33] + buffer[32] + buffer[31] + buffer[30]; // 31-34
+      info_header.biSizeImage = buffer[37] + buffer[36] + buffer[35] + buffer[34]; // 35-38
+      info_header.biXPelsPerMeter = buffer[41] + buffer[40] + buffer[39] + buffer[38]; // 39-42
+      info_header.biYPelsPerMeter = buffer[45] + buffer[44] + buffer[43] + buffer[42]; // 43-46
+      info_header.biClrUsed = buffer[49] + buffer[48] + buffer[47] + buffer[46]; // 47-50
+      info_header.biClrImportant = buffer[53] + buffer[52] + buffer[51] + buffer[50]; // 51-54 
     */
-}
+  }
   
 
   
